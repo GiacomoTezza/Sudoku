@@ -1,5 +1,6 @@
 #!/bin/python3
 
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from tqdm import tqdm
 import argparse
@@ -86,21 +87,42 @@ def gen_puzzle(n_cells_to_leave):
     progress_counter = 0
     return puzzle, solution
 
+def draw_puzzle(board, output_file):
+    image_size = (360, 360)
+    cell_size = (40, 40)
+
+    img = Image.new("RGB", image_size, color="white")
+    draw = ImageDraw.Draw(img)
+
+    font_size = min(cell_size) // 2
+    font = ImageFont.load_default()
+    # font = ImageFont.truetype("arial.ttf", font_size)
+
+    for i in range(9):
+        for j in range(9):
+            cell_value = board[i, j]
+            cell_position = (j * cell_size[0], i * cell_size[1])
+            draw.rectangle([cell_position, (cell_position[0] + cell_size[0], cell_position[1] + cell_size[1])], outline="black")
+            if cell_value != 0:
+                draw.text((cell_position[0] + cell_size[0] // 2, cell_position[1] + cell_size[1] // 2),
+                          str(cell_value), font=font, fill="black", anchor="mm")
+
+    img.save(output_file)
+
 def main():
     parser = argparse.ArgumentParser(description="Sudoku Puzzle Generator")
 
-    parser.add_argument("-n", "--num-cells", type=int, required=True, help="Number of cells to leave in the puzzle (min 17)")
+    parser.add_argument("-n", "--num-cells", type=int, default=25, help="Number of cells to leave in the puzzle (min 17)")
+    parser.add_argument("-o", "--output-file", type=str, default="sudoku_puzzle.png", help="Output image file")
     args = parser.parse_args()
 
     if args.num_cells < 17 or args.num_cells > 81:
         parser.error("Number of cells to leave must be between 17 and 81")
 
     puzzle_board = gen_puzzle(args.num_cells)
+    draw_puzzle(puzzle_board[0], args.output_file)
     
-    print("\nGenerated Puzzle:")
-    print(puzzle_board[0])
-    print("Solution:")
-    print(puzzle_board[1])
+    print(f"\nGenerated Sudoku saved to {args.output_file}")
 
 if __name__ == "__main__":
     main()
