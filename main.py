@@ -88,15 +88,22 @@ def gen_puzzle(n_cells_to_leave):
     return puzzle, solution
 
 def draw_puzzle(board, output_file):
-    image_size = (360, 360)
-    cell_size = (40, 40)
+    image_size = (720, 720)
+    cell_size = (80, 80)
 
     img = Image.new("RGB", image_size, color="white")
     draw = ImageDraw.Draw(img)
 
-    font_size = min(cell_size) // 2
+    font_size = min(cell_size) // 1.5
     font = ImageFont.load_default()
-    # font = ImageFont.truetype("arial.ttf", font_size)
+    font = ImageFont.truetype("./tmp/Montserrat-Regular.ttf", font_size)
+
+    # Draw thicker lines dividing the grid into 9 sectors
+    for i in range(1, 9):
+        thickness = 2 if i % 3 == 0 else 1  # Thicker lines for every 3rd line
+        line_position = i * cell_size[0]
+        draw.line([(line_position, 0), (line_position, image_size[1])], fill="black", width=thickness)
+        draw.line([(0, line_position), (image_size[0], line_position)], fill="black", width=thickness)
 
     for i in range(9):
         for j in range(9):
@@ -112,15 +119,16 @@ def draw_puzzle(board, output_file):
 def main():
     parser = argparse.ArgumentParser(description="Sudoku Puzzle Generator")
 
-    parser.add_argument("-n", "--num-cells", type=int, default=25, help="Number of cells to leave in the puzzle (min 17)")
-    parser.add_argument("-o", "--output-file", type=str, default="sudoku_puzzle.png", help="Output image file")
+    parser.add_argument("-n", "--num-cells", type=int, default=30, help="Number of cells to leave in the puzzle (min 17)")
+    parser.add_argument("-o", "--output-file", type=str, default="sudoku_puzzle", help="Output image file name")
     args = parser.parse_args()
 
     if args.num_cells < 17 or args.num_cells > 81:
         parser.error("Number of cells to leave must be between 17 and 81")
 
     puzzle_board = gen_puzzle(args.num_cells)
-    draw_puzzle(puzzle_board[0], args.output_file)
+    draw_puzzle(puzzle_board[0], args.output_file+".png")
+    draw_puzzle(puzzle_board[0], args.output_file+"_solution.png")
     
     print(f"\nGenerated Sudoku saved to {args.output_file}")
 
