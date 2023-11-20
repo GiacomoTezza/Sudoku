@@ -76,18 +76,25 @@ def gen_puzzle(n_cells_to_leave):
     non_empty_cells = np.column_stack(np.where(puzzle != 0))
     np.random.shuffle(non_empty_cells)
 
-    for _ in tqdm(range(np.count_nonzero(puzzle != 0) - n_cells_to_leave), desc="Generating Puzzle", unit="cell"):
+    removed_cells_count = 0
+
+    for _ in tqdm(range(np.count_nonzero(puzzle != 0)), desc="Generating Puzzle", unit="cell"):
         row, col = non_empty_cells[_]
         temp_value = puzzle[row, col]
         puzzle[row, col] = 0
 
         if not is_unique(puzzle):
             puzzle[row, col] = temp_value
+        else:
+            removed_cells_count += 1
+        
+        if removed_cells_count == 81 - n_cells_to_leave:
+            break
 
     progress_counter = 0
     return puzzle, solution
 
-def draw_puzzle(board, output_file):
+def draw_puzzle(board, output_file, solution=False):
     image_size = (720, 720)
     cell_size = (80, 80)
 
@@ -96,11 +103,14 @@ def draw_puzzle(board, output_file):
 
     font_size = min(cell_size) // 1.5
     font = ImageFont.load_default()
-    font = ImageFont.truetype("./tmp/Montserrat-Regular.ttf", font_size)
 
-    # Draw thicker lines dividing the grid into 9 sectors
+    try:
+        font = ImageFont.truetype("./tmp/Montserrat-Regular.ttf", font_size)
+    except OSError:
+        print("Font file not found. Using default font.")
+
     for i in range(1, 9):
-        thickness = 2 if i % 3 == 0 else 1  # Thicker lines for every 3rd line
+        thickness = 2 if i % 3 == 0 else 1
         line_position = i * cell_size[0]
         draw.line([(line_position, 0), (line_position, image_size[1])], fill="black", width=thickness)
         draw.line([(0, line_position), (image_size[0], line_position)], fill="black", width=thickness)
@@ -114,7 +124,8 @@ def draw_puzzle(board, output_file):
                 draw.text((cell_position[0] + cell_size[0] // 2, cell_position[1] + cell_size[1] // 2),
                           str(cell_value), font=font, fill="black", anchor="mm")
 
-    img.save(output_file)
+    output_name = output_file + ("_solution" if solution else "") + ".png"
+    img.save(output_name)
 
 def main():
     parser = argparse.ArgumentParser(description="Sudoku Puzzle Generator")
@@ -127,8 +138,8 @@ def main():
         parser.error("Number of cells to leave must be between 17 and 81")
 
     puzzle_board = gen_puzzle(args.num_cells)
-    draw_puzzle(puzzle_board[0], args.output_file+".png")
-    draw_puzzle(puzzle_board[0], args.output_file+"_solution.png")
+    draw_puzzle(puzzle_board[0], args.output_file)
+    draw_puzzle(puzzle_board[1], args.output_file, solution=True)
     
     print(f"\nGenerated Sudoku saved to {args.output_file}")
 
